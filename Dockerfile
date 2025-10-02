@@ -1,16 +1,23 @@
-# 1. Base Image: Start with the official n8n Docker image
+# 1. Base Image
 FROM n8nio/n8n:latest
 
-# 2. Set Working Directory
+# 2. Install Build Essentials
+# This command updates the package list and installs general build tools (like gcc, g++)
+# which often resolve "exit status 1" during npm install.
+RUN apk update && apk add --no-cache build-base python3
+
+# 3. Set Working Directory
 WORKDIR /usr/local/lib/node_modules/n8n
 
-# 3. Define the custom nodes to install
-# We create a temporary package.json listing only the SerpApi node.
+# 4. Define the custom nodes to install
 RUN echo '{ "dependencies": { "n8n-nodes-serpapi": "latest" } }' > package.json
 
-# 4. Install the custom nodes
-# The --prefix . command installs them directly into n8n's module path.
+# 5. Install the custom nodes
+# We use --no-package-lock for simpler builds
 RUN npm install --prefix . --no-package-lock
 
-# 5. Clean up the temporary file (Good practice)
-RUN rm package.json
+# 6. Clean up the temporary file and build packages (optional, but saves space)
+RUN rm package.json \
+    && apk del build-base python3
+
+# The rest of the original image settings remain in place.
